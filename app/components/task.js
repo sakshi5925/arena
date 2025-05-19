@@ -1,13 +1,60 @@
-"use client"
-import { useState } from "react";
+"use client";
+import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useSelector } from "react-redux";
+import io from "socket.io-client";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { useDispatch } from "react-redux";
+import { addInvitation } from "../store/invitationSlice";
 
 const Task = () => {
+  const socketRef = useRef(null);
   const [task, setTask] = useState("");
-  const friends = useSelector(state => state.friends.myFriends);
+  const [TaskId, setTaskid] = useState("");
+  const friends = useSelector((state) => state.friends.myFriends);
   const [selectedParticipants, setSelectedParticipants] = useState([]);
   const { data: session } = useSession();
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    if (!session || !session.user) return;
+
+    if (!socketRef.current) {
+      socketRef.current = io("http://localhost:4000", {
+        transports: ["websocket"],
+      });
+
+      socketRef.current.on("connect", () => {
+        console.log("Connected to socket.io server", socketRef.current.id);
+      });
+
+      // Show toast when receiving a task invitation
+      socketRef.current.on("receive-task-invitation", ({ taskId, from }) => {
+        toast.info(`📩 ${from} invited you to task: ${taskId}`);
+        console.log(`You got a task invitation from ${from} for task ${taskId}`);
+      dispatch(addInvitation({
+      taskId,
+      from,
+    receivedAt: new Date().toISOString(),
+  }));
+      
+      });
+    }
+
+    socketRef.current.emit(
+      "join-room",
+      {
+        room: session.user.name,
+        githubId: session.user.name,
+      },
+      [session]
+    );
+
+    return () => {
+      socketRef.current.disconnect();
+    };
+  }, [session]);
 
   const handleOnSubmit = async (e) => {
     e.preventDefault();
@@ -18,6 +65,8 @@ const Task = () => {
       participants: selectedParticipants,
     };
 
+    console.log("data to send", dataToSend);
+
     const res = await fetch("/api/task", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -25,13 +74,24 @@ const Task = () => {
     });
 
     const result = await res.json();
-
     if (res.ok) {
-      alert("Task created successfully!");
+      toast.success("Task created successfully!");
+      setTaskid(result.taskId);
+
+      if (socketRef.current) {
+        socketRef.current.emit("send-task-invitation", {
+          taskId: result.taskId,
+          participants: selectedParticipants,
+          from: session.user.name,
+        });
+      } else {
+        console.warn("Socket not connected yet.");
+      }
+
       setTask("");
       setSelectedParticipants([]);
     } else {
-      alert(result.message || "Failed to create task.");
+      toast.error(result.message || "❌ Failed to create task.");
     }
   };
 
@@ -68,8 +128,8 @@ const Task = () => {
               >
                 <input
                   type="checkbox"
-                  value={friend._id}
-                  checked={selectedParticipants.includes(friend._id)}
+                  value={friend.githubId}
+                  checked={selectedParticipants.includes(friend.githubId)}
                   onChange={(e) => {
                     const val = e.target.value;
                     setSelectedParticipants((prev) =>
@@ -99,6 +159,9 @@ const Task = () => {
           Create
         </button>
       </form>
+
+      {/* Toast container */}
+      <ToastContainer position="top-center" autoClose={3000} />
     </div>
   );
 };

@@ -1,10 +1,14 @@
 import mongoose from "mongoose";
 
+const participantSchema = new mongoose.Schema({
+  githubId: String,
+  progress: { type: Number, default: 0 },
+  status: { type: String, default: "pending" }, 
+});
 const taskSchema = new mongoose.Schema({
   title: String,
   creator: String,
-  participants: [String],
-  progress: Array,
+  participants: [participantSchema],
   status: { type: String, default: "ongoing" },
 });
 

@@ -3,6 +3,8 @@ import { useSession } from "next-auth/react";
 import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchMyFriends, setNonFriends, addFriend } from "../store/friendSlice";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import Task from "./task";
 
 const FriendsSelect = () => {
@@ -43,8 +45,20 @@ const FriendsSelect = () => {
     const result = await res.json();
     if (res.ok) {
       dispatch(addFriend(result));
+      toast.success(`${result.githubId} added to your friends! 🎉`, {
+        position: "top-right",
+        autoClose: 2500,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: "colored",
+      });
     } else {
-      alert(result.message || "Failed to add friend.");
+      toast.error(result.message || "Failed to add friend.", {
+        position: "top-right",
+        autoClose: 3000,
+      });
     }
   };
 
@@ -131,7 +145,8 @@ const FriendsSelect = () => {
         )}
       </div>
 
-     
+      <ToastContainer />
+      
     </div>
   );
 };

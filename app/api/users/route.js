@@ -32,7 +32,6 @@ export async function GET(){
         const alluser=await User.find();
      
         if(alluser){
-            console.log("all users",alluser)
             return NextResponse.json(alluser,{status:200});
         }
         else{

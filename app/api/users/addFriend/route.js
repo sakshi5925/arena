@@ -6,14 +6,28 @@ export async function POST(request) {
   try {
     const { userId, friendId } = await request.json();
     await connectDb();
+    const user = await User.findOne({ githubId: userId })
+    if (!user) {
+      return NextResponse.json({ message: "User not found" }, { status: 404 });
+    }
+    const friendexist = await User.findById(friendId);
+    if (!friendexist) {
+      return NextResponse.json({ message: "Friend not found" }, { status: 404 });
+    }
+   
 
     await User.findOneAndUpdate(
       { githubId: userId },
-      { $addToSet: { friends: friendId } },
+      { $addToSet: { friends: friendexist._id } },
+      { new: true }
+    );
+    await User.findOneAndUpdate(
+      { _id: friendId },
+      { $addToSet: { friends: user._id} },
       { new: true }
     );
 
-    const friend = await User.findById(friendId);  // <-- change here
+    const friend = await User.findById(friendId);
 
     if (!friend) {
       return NextResponse.json({ message: "Friend not found" }, { status: 404 });
