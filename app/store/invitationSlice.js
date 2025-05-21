@@ -4,6 +4,7 @@ const invitationSlice = createSlice({
   name: 'invitations',
   initialState: {
     receivedInvitations: [],
+    acceptedInvitations:[],
   },
   reducers: {
     addInvitation(state, action) {
@@ -12,11 +13,12 @@ const invitationSlice = createSlice({
     clearInvitations(state) {
       state.receivedInvitations = [];
     },
-    removeInvitation(state, action) {
-      state.receivedInvitations.splice(action.payload, 1);
-    },
+    
+    acceptInvitations(state,action){
+      state.acceptedInvitations.push(action.payload);
+    }
   },
 });
 
-export const { addInvitation, clearInvitations, removeInvitation } = invitationSlice.actions;
+export const { addInvitation, clearInvitations,acceptInvitations} = invitationSlice.actions;
 export const invitationsReducer = invitationSlice.reducer;

@@ -7,6 +7,7 @@ const participantSchema = new mongoose.Schema({
 });
 const taskSchema = new mongoose.Schema({
   title: String,
+  slug: String,
   creator: String,
   participants: [participantSchema],
   status: { type: String, default: "ongoing" },

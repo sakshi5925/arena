@@ -6,7 +6,7 @@ import { useEffect } from "react";
 export default function Navbar() {
   const { data: session } = useSession();
   const handleUser=async()=>{
-     if(session.user.email){
+     if(session && session.user){
         const res=await fetch("/api/users",{
             method:"POST",
             headers: {
@@ -22,7 +22,9 @@ export default function Navbar() {
      }
   }
   useEffect(() => {
-    handleUser()
+    if (session) {
+    handleUser();
+  }
   },[session])
   
 

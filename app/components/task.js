@@ -1,11 +1,10 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import io from "socket.io-client";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { useDispatch } from "react-redux";
 import { addInvitation } from "../store/invitationSlice";
 
 const Task = () => {
@@ -29,16 +28,11 @@ const Task = () => {
         console.log("Connected to socket.io server", socketRef.current.id);
       });
 
-      // Show toast when receiving a task invitation
-      socketRef.current.on("receive-task-invitation", ({ taskId, from }) => {
+      socketRef.current.on("receive-task-invitation", ({ taskId, from, githubId, slug }) => {
         toast.info(`📩 ${from} invited you to task: ${taskId}`);
-        console.log(`You got a task invitation from ${from} for task ${taskId}`);
-      dispatch(addInvitation({
-      taskId,
-      from,
-    receivedAt: new Date().toISOString(),
-  }));
-      
+        dispatch(addInvitation({
+          taskId, from, githubId, slug, receivedAt: new Date().toISOString(),
+        }));
       });
     }
 
@@ -50,22 +44,15 @@ const Task = () => {
       },
       [session]
     );
-
-    return () => {
-      socketRef.current.disconnect();
-    };
   }, [session]);
 
   const handleOnSubmit = async (e) => {
     e.preventDefault();
-
     const dataToSend = {
       title: task,
       creator: session.user.name,
       participants: selectedParticipants,
     };
-
-    console.log("data to send", dataToSend);
 
     const res = await fetch("/api/task", {
       method: "POST",
@@ -74,18 +61,18 @@ const Task = () => {
     });
 
     const result = await res.json();
+
     if (res.ok) {
-      toast.success("Task created successfully!");
+      toast.success("✅ Task created successfully!");
       setTaskid(result.taskId);
 
       if (socketRef.current) {
         socketRef.current.emit("send-task-invitation", {
           taskId: result.taskId,
           participants: selectedParticipants,
+          slug: result.slug,
           from: session.user.name,
         });
-      } else {
-        console.warn("Socket not connected yet.");
       }
 
       setTask("");
@@ -96,35 +83,35 @@ const Task = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto p-10 bg-gradient-to-br from-indigo-100 to-indigo-50 rounded-3xl shadow-2xl border border-indigo-300">
+    <div className="p-10 bg-gradient-to-br from-indigo-100 to-indigo-50 dark:from-gray-800 dark:to-gray-900 shadow-2xl border border-indigo-300 dark:border-gray-700  h-120 transition duration-500 ">
       <form onSubmit={handleOnSubmit} className="space-y-8">
-        <h2 className="text-4xl font-extrabold text-indigo-800 mb-4 text-center drop-shadow-md">
-          Create Your Task
+        <h2 className="text-4xl font-extrabold text-indigo-800 dark:text-indigo-300 mb-4 text-center drop-shadow-md">
+          🚀 Create Your Task
         </h2>
 
         <input
           type="text"
-          placeholder="Enter Your Task"
+          placeholder="📝 Enter Your Task"
           value={task}
           name="title"
           onChange={(e) => setTask(e.target.value)}
-          className="w-full p-4 rounded-xl border border-indigo-400 focus:outline-none focus:ring-4 focus:ring-indigo-500 shadow-sm transition duration-300 placeholder-indigo-400 text-indigo-900 font-medium"
+          className="w-full p-4 rounded-xl border border-indigo-400 dark:border-gray-600 focus:outline-none focus:ring-4 focus:ring-indigo-500 dark:focus:ring-indigo-300 bg-white dark:bg-gray-800 shadow-sm transition placeholder-indigo-400 dark:placeholder-gray-400 text-indigo-900 dark:text-gray-200 font-medium"
           required
         />
 
         <label
           htmlFor="participants"
-          className="block mb-3 font-semibold text-indigo-700 tracking-wide"
+          className="block mb-3 font-semibold text-indigo-700 dark:text-indigo-300 tracking-wide"
         >
-          Select your friends
+          👥 Select your friends
         </label>
 
         {friends.length > 0 ? (
-          <div className="space-y-3 max-h-40 overflow-y-auto border border-indigo-300 rounded-xl p-4 bg-white shadow-inner">
+          <div className="space-y-3 max-h-48 overflow-y-auto border border-indigo-300 dark:border-gray-600 rounded-xl p-4 bg-white dark:bg-gray-800 shadow-inner">
             {friends.map((friend) => (
               <label
                 key={friend._id}
-                className="flex items-center space-x-3 cursor-pointer select-none transition hover:bg-indigo-50 rounded-md p-2"
+                className="flex items-center space-x-3 cursor-pointer select-none transition hover:bg-indigo-50 dark:hover:bg-gray-700 rounded-md p-2"
               >
                 <input
                   type="checkbox"
@@ -140,28 +127,27 @@ const Task = () => {
                   }}
                   className="form-checkbox h-5 w-5 text-indigo-600 rounded focus:ring-indigo-500 transition duration-200"
                 />
-                <span className="text-indigo-900 font-semibold">
+                <span className="text-indigo-900 dark:text-gray-200 font-semibold">
                   {friend.githubId}
                 </span>
               </label>
             ))}
           </div>
         ) : (
-          <p className="text-red-500 text-center italic font-medium">
+          <p className="text-red-500 dark:text-red-400 text-center italic font-medium">
             No friends to select
           </p>
         )}
 
         <button
           type="submit"
-          className="w-full py-4 bg-indigo-700 text-white text-xl font-bold rounded-2xl shadow-lg hover:bg-indigo-800 focus:outline-none focus:ring-4 focus:ring-indigo-400 transition duration-300"
+          className="w-full py-4 bg-indigo-700 dark:bg-indigo-600 text-white text-xl font-bold rounded-2xl shadow-lg hover:bg-indigo-800 dark:hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-400 transition duration-300"
         >
-          Create
+          🎯 Create Task
         </button>
       </form>
 
-      {/* Toast container */}
-      <ToastContainer position="top-center" autoClose={3000} />
+      <ToastContainer position="top-center" autoClose={3000} theme="dark" />
     </div>
   );
 };
