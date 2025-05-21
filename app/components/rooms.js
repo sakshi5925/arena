@@ -36,13 +36,13 @@ const Rooms = () => {
   };
 
   return (
-    <div className="w-full bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-t border-purple-700 p-6 rounded-lg shadow-lg">
+    <div className="w-full bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-t border-purple-700 p-6 rounded-lg shadow-lg h-120">
       <h2 className="text-3xl font-bold text-purple-400 mb-6 text-center drop-shadow-lg">
         📋 Your Available Rooms
       </h2>
 
       {rooms.length > 0 ? (
-        <div className="flex gap-5 overflow-x-auto p-3">
+        <div className="flex gap-2 overflow-x-auto flex-wrap">
           {rooms.map((room, index) => (
             <div
               key={index}

@@ -16,12 +16,14 @@ export default function Homepage() {
         <div className="flex flex-1 overflow-hidden">
           {/* Left Sidebar */}
           <div className="w-[40%] min-w-[240px] overflow-y-auto   h-116">
-            <FriendsSelect />
+             <Rooms />
+           
           </div>
 
           {/* Center */}
           <div className="w-[30%] overflow-y-auto ">
-            <Invitation />
+             <FriendsSelect />
+           
           </div>
 
           {/* Right Sidebar */}
@@ -32,7 +34,7 @@ export default function Homepage() {
 
         {/* Bottom Section (Footer Rooms) */}
         <div className="h-[200px] overflow-y-auto">
-          <Rooms />
+          <Invitation />
         </div>
       </div>
     </div>

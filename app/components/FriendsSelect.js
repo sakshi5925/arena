@@ -68,7 +68,7 @@ const FriendsSelect = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100 p-8">
+    <div className=" bg-gray-900 text-gray-100 p-8">
       <div className="max-w-5xl mx-auto bg-gray-800 shadow-2xl p-10 border border-gray-700">
         <h2 className="text-4xl font-extrabold text-white mb-10 border-b border-gray-700 pb-4 drop-shadow-md">
           Invite Your Friends

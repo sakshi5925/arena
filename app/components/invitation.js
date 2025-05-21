@@ -31,7 +31,7 @@ export const Invitation = ({ socket }) => {
   };
 
   return (
-    <div className="p-6 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 shadow-lg border border-gray-700  h-116">
+    <div className="p-6 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 shadow-lg border border-gray-700 h-auto">
       <h3 className="text-3xl font-bold mb-6 text-cyan-400 drop-shadow-md">Your Invitations</h3>
       {invitations.length === 0 ? (
         <p className="text-gray-400 text-center italic">No invitations yet!</p>
