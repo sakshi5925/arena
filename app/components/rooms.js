@@ -4,15 +4,38 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { DoorOpen } from "lucide-react";
 import { useSession } from "next-auth/react";
-
+import { useSelector, useDispatch } from 'react-redux'
+import { setRoom } from "../store/roomsSlice";
+import { useSocket } from "../hooks/useSocket";
+import toast from "react-hot-toast";
 const Rooms = () => {
   const [rooms, setrooms] = useState([]);
   const router = useRouter();
   const { data: session } = useSession();
+   const dispatch = useDispatch();
+ const roomState = useSelector((state) => state.room);
+   const socket = useSocket(); 
+   console.log("socket is ",socket)
 
+useEffect(() => {
+  if (!socket) {
+    console.log("socket is not connected");
+    return ;
+  }
+
+  socket.on("room-updated", ({ slug, githubId }) => {
+    dispatch(setRoom({ room: "true", roomid: slug }));
+    toast.success(`${githubId} joined room ${slug}`);
+  });
+
+  return () => {
+    socket.off("room-updated");
+  };
+}, [socket, dispatch]);
+ console.log("room is ",roomState.room);
   useEffect(() => {
     const fetchTasks = async () => {
-      if (session && session.user) {
+      if (session && session.user && roomState.room) {
         const res = await fetch("/api/task");
         const result = await res.json();
 
@@ -29,7 +52,7 @@ const Rooms = () => {
     };
 
     fetchTasks();
-  }, [session]);
+  }, [session,roomState.room]);
 
   const handleJoin = (slug) => {
     router.push(`/dashboard/${slug}`);

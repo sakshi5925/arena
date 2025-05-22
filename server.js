@@ -35,10 +35,12 @@ io.on("connection", (socket) => {
   });
 
   // Accept invitation listener — ADD THIS!
-  socket.on("accept-task-invitation", ({ taskId, from, acceptedAt,slug }) => {
+  socket.on("accept-task-invitation", ({ taskId, from, acceptedAt,slug ,githubId}) => {
     console.log(`Invitation accepted for task ${taskId} from ${from} at ${acceptedAt} to ${slug}`);
     // Optionally: notify task room or inviter user here
     // Example: io.to(taskId).emit("user-joined-task", { user: socket.id, taskId });
+    socket.join(slug);
+    io.to(slug).emit("room-updated", { slug, githubId, taskId });
   });
    socket.on("updateProgress", (data) => {
         io.to(data.slug).emit("progressUpdated", data);

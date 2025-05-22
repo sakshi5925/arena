@@ -4,7 +4,7 @@ import { invitationsReducer } from './invitationSlice';
 import storage from 'redux-persist/lib/storage';
 import { persistReducer, persistStore } from 'redux-persist';
 import { combineReducers } from "redux";
-import { RoomsReducer } from "./roomsSlice";
+import {roomReducer} from './roomsSlice'
 const persistConfig = {
   key: "root",
   storage,
@@ -12,7 +12,7 @@ const persistConfig = {
 const rootReducer = combineReducers({
   friends: friendsReducer,
   invitations: invitationsReducer,
-  Rooms:RoomsReducer
+  room: roomReducer,
 });
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 export const store = configureStore({

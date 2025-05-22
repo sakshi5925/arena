@@ -1,33 +1,46 @@
 "use client"
 import { useSelector, useDispatch } from "react-redux";
-import { acceptInvitations} from "../store/invitationSlice";
+import { acceptInvitations, declineInvitation } from "../store/invitationSlice";
+import { setRoom } from "../store/roomsSlice";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import toast from "react-hot-toast";
+import { useSocket } from "../hooks/useSocket";
 
-export const Invitation = ({ socket }) => {
+export const Invitation = () => {
   const invitations = useSelector((state) => state.invitations.receivedInvitations);
   const dispatch = useDispatch();
   const router = useRouter();
-
+  const socket = useSocket();
   const handleAccept = async (invite) => {
     if (socket) {
       socket.emit("accept-task-invitation", {
         slug: invite.slug,
         taskId: invite.taskId,
         from: invite.from,
+        githubId:invite.githubId,
         acceptedAt: new Date().toISOString(),
       });
     }
 
     const id = invite.githubId;
     console.log("participants", id);
-    dispatch(acceptInvitations(invite.githubId));
+
+    dispatch(acceptInvitations(invite));
+
 
     await fetch("/api/task/status", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ participant: id }),
     });
+
+    toast.success(`Accepted invitation to task ${invite.taskId}`);
+  };
+
+  const handleDecline = (invite) => {
+    dispatch(declineInvitation(invite));
+    toast.error(`Declined invitation to task ${invite.taskId}`);
   };
 
   return (
@@ -60,7 +73,7 @@ export const Invitation = ({ socket }) => {
                   Accept
                 </button>
                 <button
-                  onClick={() => dispatch(removeInvitation(invite.taskId))}
+                  onClick={() => handleDecline(invite)}
                   className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-md transition duration-200"
                   aria-label={`Decline invitation from ${invite.from}`}
                 >

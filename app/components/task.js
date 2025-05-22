@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
+import { useSocket } from "../hooks/useSocket";
 import { useSelector, useDispatch } from "react-redux";
 import io from "socket.io-client";
 import { toast, ToastContainer } from "react-toastify";
@@ -15,20 +16,13 @@ const Task = () => {
   const [selectedParticipants, setSelectedParticipants] = useState([]);
   const { data: session } = useSession();
   const dispatch = useDispatch();
-
+  const socket = useSocket();
   useEffect(() => {
     if (!session || !session.user) return;
 
-    if (!socketRef.current) {
-      socketRef.current = io("http://localhost:4000", {
-        transports: ["websocket"],
-      });
+    if (socket) {
 
-      socketRef.current.on("connect", () => {
-        console.log("Connected to socket.io server", socketRef.current.id);
-      });
-
-      socketRef.current.on("receive-task-invitation", ({ taskId, from, githubId, slug }) => {
+     socket.on("receive-task-invitation", ({ taskId, from, githubId, slug }) => {
         toast.info(`📩 ${from} invited you to task: ${taskId}`);
         dispatch(addInvitation({
           taskId, from, githubId, slug, receivedAt: new Date().toISOString(),
@@ -36,7 +30,7 @@ const Task = () => {
       });
     }
 
-    socketRef.current.emit(
+    socket.emit(
       "join-room",
       {
         room: session.user.name,
@@ -66,14 +60,20 @@ const Task = () => {
       toast.success("✅ Task created successfully!");
       setTaskid(result.taskId);
 
-      if (socketRef.current) {
-        socketRef.current.emit("send-task-invitation", {
-          taskId: result.taskId,
-          participants: selectedParticipants,
-          slug: result.slug,
-          from: session.user.name,
-        });
-      }
+   if (socket) {
+  socket.emit("send-task-invitation", {
+    taskId: result.taskId,
+    participants: selectedParticipants,
+    slug: result.slug,
+    from: session.user.name,
+  });
+
+  // Creator joins their own task room immediately
+  socket.emit("join-room", {
+    room: result.slug,
+    githubId: session.user.name,
+  });
+}
 
       setTask("");
       setSelectedParticipants([]);
