@@ -22,6 +22,7 @@ io.on("connection", (socket) => {
   // Send invitation to participants
   socket.on("send-task-invitation", ({ taskId, participants, from,slug }) => {
     console.log("the slug is ",slug);
+    socket.join(slug);
     participants.forEach((githubId) => {
       io.to(githubId).emit("receive-task-invitation", {
         taskId,
@@ -40,7 +41,7 @@ io.on("connection", (socket) => {
     // Optionally: notify task room or inviter user here
     // Example: io.to(taskId).emit("user-joined-task", { user: socket.id, taskId });
     socket.join(slug);
-    io.to(slug).emit("room-updated", { slug, githubId, taskId });
+     io.to(slug).emit("room-updated", { slug, githubId, from, taskId });
   });
    socket.on("updateProgress", (data) => {
         io.to(data.slug).emit("progressUpdated", data);

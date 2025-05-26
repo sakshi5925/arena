@@ -1,59 +1,26 @@
 "use client";
 
-import React, { useEffect, useRef, useState, use } from "react";
+import React, { useEffect, useState ,use} from "react";
 import { Users, Loader } from "lucide-react";
 import { useSession } from "next-auth/react";
-import io from "socket.io-client";
+import Scoreboard from "@/app/components/scoreboard";
+import Taskstatus from "@/app/components/taskstatus";
 
 const Room = ({ params: paramsPromise }) => {
   const params = use(paramsPromise);
   const { slug } = params;
   const { data: session } = useSession();
   const [participants, setParticipants] = useState([]);
-  const socketRef = useRef();
-
-  useEffect(() => {
-    socketRef.current = io("http://localhost:4000", {
-      transports: ["websocket"],
-    });
-
-    socketRef.current.on("connect", () => {
-      console.log("Connected to socket.io server", socketRef.current.id);
-      socketRef.current.emit("join-room", {
-        room: slug,
-        githubId: session.user.name,
-      });
-    });
-
-    socketRef.current.on("progressUpdated", (data) => {
-      if (data.slug === slug) {
-        setParticipants((prev) =>
-          prev
-            .map((p) =>
-              p.githubId === data.githubId
-                ? { ...p, progress: data.progress }
-                : p
-            )
-            .sort((a, b) => b.progress - a.progress)
-        );
-      }
-    });
-
-    return () => {
-      socketRef.current.disconnect();
-    };
-  }, [slug]);
+  const [disabledCheckboxes, setDisabledCheckboxes] = useState(new Set());
 
   const fetchParticipants = async () => {
     if (session && session.user) {
       const res = await fetch("/api/task");
       const result = await res.json();
+      console.log("participants are ",result)
       const task = result.find((room) => room.slug === slug);
       if (task) {
-        const sorted = task.participants.sort(
-          (a, b) => b.progress - a.progress
-        );
-        setParticipants(sorted);
+        setParticipants(task.participants);
       }
     }
   };
@@ -62,26 +29,18 @@ const Room = ({ params: paramsPromise }) => {
     fetchParticipants();
   }, [session, slug]);
 
-  const handleProgressUpdated = (githubId, newProgress) => {
-    socketRef.current.emit("updateProgress", {
-      slug,
-      githubId,
-      progress: newProgress,
-    });
+const handleClick = (q,participantid,participantprogress) => {
+    increaseProgress(participantid, participantprogress);
+    setDisabledCheckboxes((prev) => new Set(prev).add(q));
   };
-
   const increaseProgress = async (githubId, currentProgress) => {
-    const newProgress = Math.min(currentProgress + 20, 100);
+    const newProgress = Math.min(currentProgress + 25, 100);
 
-    setParticipants((prev) =>
-      prev
-        .map((p) =>
-          p.githubId === githubId ? { ...p, progress: newProgress } : p
-        )
-        .sort((a, b) => b.progress - a.progress)
-    );
-
-    handleProgressUpdated(githubId, newProgress);
+setParticipants((prev) =>
+  prev.map((p) =>
+    p.githubId === githubId ? { ...p, progress: newProgress } : p
+  )
+);
 
     await fetch("/api/task/progress", {
       method: "POST",
@@ -91,8 +50,11 @@ const Room = ({ params: paramsPromise }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-100 dark:from-gray-900 to-indigo-50 dark:to-gray-800 flex flex-col items-center justify-start p-8">
-      <div className="max-w-5xl w-full bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-indigo-300 dark:border-gray-700 p-10">
+    
+    <div className="min-h-screen bg-gradient-to-br from-indigo-100 dark:from-gray-900 to-indigo-50 dark:to-gray-800 flex  items-center justify-end gap-8 p-8">
+     
+        <Taskstatus slug={slug}/>
+      <div className="max-w-5xl w-full bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-indigo-300 dark:border-gray-700 p-10 mb-20">
         <h1 className="text-4xl font-extrabold text-indigo-800 dark:text-indigo-300 mb-8 text-center drop-shadow-sm">
           📌 Task: <span className="text-black dark:text-white">{slug}</span>
         </h1>
@@ -105,7 +67,8 @@ const Room = ({ params: paramsPromise }) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {participants.map((participant, index) => (
               <div
-                key={index}
+               key={participant.githubId}
+
                 className="p-5 bg-indigo-50 dark:bg-gray-800 rounded-2xl shadow-md border border-indigo-200 dark:border-gray-700 hover:bg-indigo-100 dark:hover:bg-gray-700 transition duration-300"
               >
                 <div className="flex items-center space-x-4 mb-4">
@@ -129,35 +92,32 @@ const Room = ({ params: paramsPromise }) => {
                 <div className="text-sm text-indigo-700 dark:text-indigo-300 font-medium">
                   {participant.progress}% completed
                 </div>
+
                 <div>
-<h3 class="mb-4 font-semibold text-gray-900 dark:text-white">Complete All The Task </h3>
-<ul class="w-48 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-    <li class="w-full border-b border-gray-200 rounded-t-lg dark:border-gray-600">
-        <div class="flex items-center ps-3">
-            <input id="vue-checkbox" type="checkbox" value="" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" onClick={() =>
-                    increaseProgress(participant.githubId, participant.progress)
-                  }/>
-            <label for="vue-checkbox" class="w-full py-3 ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">Question 1st </label>
-        </div>
+                  <h3 className="mb-4 font-semibold text-gray-900 dark:text-white">
+                    Complete All The Task
+                  </h3>
+                  <ul className="w-48 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+  {[1, 2, 3, 4].map((q) => (
+    <li
+      key={q}
+      className="w-full border-b border-gray-200 dark:border-gray-600"
+    >
+      <div className="flex items-center ps-3">
+        <input
+          type="checkbox"
+          disabled={participant.progress >= 100 ||  disabledCheckboxes.has(q)}
+          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 focus:ring-2 dark:bg-gray-600 dark:border-gray-500"
+          onClick={() =>handleClick(q,participant.githubId,participant.progress)
+            // increaseProgress(participant.githubId, participant.progress)
+          }
+        />
+        <label className="w-full py-3 ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+          Question {q}
+        </label>
+      </div>
     </li>
-    <li class="w-full border-b border-gray-200 rounded-t-lg dark:border-gray-600">
-        <div class="flex items-center ps-3">
-            <input id="react-checkbox" type="checkbox" value="" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500"/>
-            <label for="react-checkbox" class="w-full py-3 ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">Question 2nd</label>
-        </div>
-    </li>
-    <li class="w-full border-b border-gray-200 rounded-t-lg dark:border-gray-600">
-        <div class="flex items-center ps-3">
-            <input id="angular-checkbox" type="checkbox" value="" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500"/>
-            <label for="angular-checkbox" class="w-full py-3 ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">Question 3rd</label>
-        </div>
-    </li>
-    <li class="w-full border-b border-gray-200 rounded-t-lg dark:border-gray-600">
-        <div class="flex items-center ps-3">
-            <input id="laravel-checkbox" type="checkbox" value="" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500"/>
-            <label for="laravel-checkbox" class="w-full py-3 ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">Question 4th</label>
-        </div>
-    </li>
+  ))}
 </ul>
 
                 </div>
@@ -173,19 +133,8 @@ const Room = ({ params: paramsPromise }) => {
                 >
                   {participant.status}
                 </div>
-                <button
-                  onClick={() =>
-                    increaseProgress(participant.githubId, participant.progress)
-                  }
-                  disabled={participant.progress >= 100}
-                  className={`mt-4 px-4 py-2 rounded-full ${
-                    participant.progress >= 100
-                      ? "bg-gray-400 cursor-not-allowed"
-                      : "bg-indigo-600 text-white hover:bg-indigo-700"
-                  }`}
-                >
-                  {participant.progress >= 100 ? "Complete" : "+20% Progress"}
-                </button>
+
+              
               </div>
             ))}
           </div>
@@ -196,6 +145,10 @@ const Room = ({ params: paramsPromise }) => {
           </div>
         )}
       </div>
+      <div>
+      <Scoreboard participants={participants}/>
+      </div>
+    
     </div>
   );
 };

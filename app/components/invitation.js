@@ -32,7 +32,7 @@ export const Invitation = () => {
     await fetch("/api/task/status", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ participant: id }),
+      body: JSON.stringify({participant: id, taskId: invite.taskId }),
     });
 
     toast.success(`Accepted invitation to task ${invite.taskId}`);
@@ -44,7 +44,7 @@ export const Invitation = () => {
   };
 
   return (
-    <div className="p-6 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 shadow-lg border border-gray-700 h-auto">
+    <div className="p-6 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 shadow-lg border border-gray-700 h-50">
       <h3 className="text-3xl font-bold mb-6 text-cyan-400 drop-shadow-md">Your Invitations</h3>
       {invitations.length === 0 ? (
         <p className="text-gray-400 text-center italic">No invitations yet!</p>

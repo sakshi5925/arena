@@ -4,19 +4,27 @@ import { NextResponse } from "next/server";
 
 export async function POST(request) {
   try {
-    const { participant } = await request.json();
-    console.log("participants  aree",participant);
+    const { participant ,taskId} = await request.json();
+    console.log("participant:", participant, "taskId:", taskId);
+
     await connectDb();
 
-    const task = await Task.findOne({ "participants.githubId": participant });
+    const task = await Task.findOne({
+      _id: taskId,
+      "participants.githubId": participant,
+    });
     if (!task) {
       return NextResponse.json({ message: "User not found in any task" }, { status: 404 });
     }
 
-    await Task.findOneAndUpdate(
-      { "participants.githubId": participant },
-      { $set: { "participants.$.status": "accepted" } },
-      { new: true }
+     await Task.updateOne(
+      { _id: taskId, "participants.githubId": participant },
+      {
+        $set: {
+          "participants.$.status": "accepted",
+          isActive: true,
+        },
+      }
     );
 
     return NextResponse.json({ message: "Status updated successfully" }, { status: 200 });

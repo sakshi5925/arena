@@ -12,6 +12,7 @@
   "dependencies": {
     "@reduxjs/toolkit": "^2.8.2",
     "dotenv": "^16.5.0",
+    "framer-motion": "^12.14.0",
     "lucide-react": "^0.511.0",
     "mongoose": "^8.15.0",
     "next": "15.3.2",
