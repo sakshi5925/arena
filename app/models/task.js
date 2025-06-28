@@ -4,6 +4,17 @@ const participantSchema = new mongoose.Schema({
   githubId: String,
   progress: { type: Number, default: 0 },
   status: { type: String, default: "pending" }, 
+  tasks: {
+    type: [
+      {
+        id: Number,
+        title: String,
+        completed: Boolean,
+        createdAt: String,
+      },
+    ],
+    default: [],
+  },
 });
 
 const taskSchema = new mongoose.Schema({
